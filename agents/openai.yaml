@@ -1,0 +1,7 @@
+interface:
+  display_name: "章节进度导航条"
+  short_description: "按需为任意成片添加随讲话连续推进的分段章节导航条"
+  default_prompt: "使用 $chapter-progress-rail 为这个视频生成章节进度导航条，先做预览并检查位置。"
+
+policy:
+  allow_implicit_invocation: true
