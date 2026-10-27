@@ -1,44 +1,47 @@
 ---
 name: chapter-progress-rail
-description: 为任意成片按需生成并合成随讲话持续推进的分段章节导航条。用于章节进度条、栏目导航条、分段进度栏、当前栏目黄色填充等需求；不负责常规字幕或整条视频剪辑。
+description: 给已剪好的口播成片（尤其 7 号粗剪 bot 导出的粗剪第N版.mp4）加底部「章节进度导航条」：2–5 个等宽格子，当前栏随讲话时间从左往右连续填充，讲完的栏填满、没讲的栏空着。用户提到章节进度条、栏目导航条、分段进度条、章节导航、进度栏、像星姐那样的导航条、给粗剪/成片加栏目、按逐字稿时间分章，或要改导航条的位置/字号/颜色/标签时，都用这个技能，即使没说“技能”二字。负责：EDL+逐字稿换算成片时间轴、按真实词级时间分章、星姐风格预设渲染、预览与对比图、合成、抽帧验证、交付并给出抖音「章节要点」时间。不做：粗剪/剪辑、字幕、美颜调色、顶部动态提纲（另有技能）、写口播文案，也不改原片。
 ---
 
 # 章节进度导航条
 
-把栏目层作为独立衍生物处理，不修改用户的剪辑项目或原始视频。默认使用本 Skill 的本地 Pillow + FFmpeg 渲染器，不依赖 OpenMontage、Remotion 或付费服务。
+导航条是独立衍生层：原片只读，输出新文件 `*-chapter-rail(-vN).mp4`。默认用 `scripts/render_chapter_rail_v2.py --preset xingjie`（Tina 2026-10-27 认可的星姐风格）。旧脚本 `scripts/render_chapter_rail.py` 保留，用于旧样式或只要透明层的老流程。
 
-## 工作流
+## 标准流程
 
-1. 确认输入成片、输出位置、栏目名称与每栏起止时间。用户提供逐字稿或字幕时，可根据内容结构拟定栏目，再用真实字幕时间对齐边界；不要按字数估算时间。
-2. 用 `references/chapter-schema.md` 的格式写出 `chapters.json`。栏目短而清楚，通常 2 至 5 个；保持时间连续、递增且不重叠。
-3. 先运行 `scripts/render_chapter_rail.py --preview-image`，检查手机画面中的位置、字号、遮挡和中文显示。
-4. 预览合格后再渲染视频。保留原始视频，输出新的 `*-chapter-rail.mp4`。只需要透明的栏高视频层时使用 `--overlay-only`，它适合放进已有剪辑时间线，位置按命令输出的 y 值摆放。
-5. 用 `ffprobe` 检查尺寸、时长、帧率和音频流，并抽查每个章节的开始、中间、结束三处：已完成栏应填满，当前栏应连续增长，未来栏应为空。
+1. **取素材**：找到最新导出的成片，并确认它和最新 EDL 是同一版（版本号、导出时间、时长三者对得上）。拿不准就问，不要拿旧版做。素材位置和传输方法见 `references/delivery-tina.md`（本机私有文件，公开仓库里没有）。
+2. **建成片时间轴**：逐字稿的时间戳是相对原始素材的，必须经 EDL 换算：
+   `python3 scripts/edl_to_timeline.py --edl rough_cut_vN_edl.json --transcripts transcripts/ --out work/`
+   得到 `final_transcript.txt` / `final_map.json`。ASR 错字多，只信时间戳。原理见 `references/timeline.md`。
+3. **分段 + 标签**：按「问题 → 原因 → 方法」切大块，通常 3–5 栏。每栏 `start` 对齐该章第一个词的真实开始时间；最后一栏 `end` 用 ffprobe 量出的成片实际时长（EDL 累加值会比实际短零点几秒，末栏会填不满）。先给用户时间分段和草拟标签，**标签以用户写的为准**，改标签不动时间。标签风格见 `references/style-standard.md`「标签」。
+4. **预览**：选中间栏正在进行的时刻出静帧：
+   `python3 scripts/render_chapter_rail_v2.py 成片.mp4 chapters.json --preset xingjie --preview-image p.png --preview-time 300`
+   改样式时再用 `scripts/compare_stack.py` 拼「参考 / 旧版 / 新版」竖向对比图给用户看。
+5. **合成**：预览认可后 `--output 成片-chapter-rail-vN.mp4`。10 分钟的 1080×1920 成片约需 4 分钟，放后台跑。
+6. **验证**：`python3 scripts/verify_rail.py 输出.mp4 chapters.json --preset xingjie --source 原片.mp4 --outdir check/`，再亲眼看 `check_sheet.png`。门槛见下文和 `references/verification.md`。
+7. **交付**：放到用户指定位置，旧版不删，附 `chapters(_vN).json`。告诉用户每栏起点（mm:ss），让她发抖音时照填「章节要点」，这样导航条换格、章节要点、顶部提纲三处对齐。
 
-## 默认视觉
+## 关键判断
 
-- 横向等宽分栏，半透明暖灰底，浅暖黄色进度填充，深色描边文字和栏目分隔线。
-- 当前栏从左向右线性填充；已经讲完的栏保持填满；未开始的栏不填充。
-- 默认放在画面下部、字幕下方或上方的安全空位。若与人脸、字幕、免责声明重叠，调整 `--bottom`，不要缩到难以阅读。
-- 1080×1920 竖屏默认栏高 92px。脚本会按视频高度缩放字号和线宽。
+- **时间来自真实词级时间戳**，不按字数估算，也不按 EDL 段边界拍脑袋。
+- **字号统一**：所有栏用同一字号（按最长标签算），不单栏缩小。栏多或标签长导致字号偏小时，把三个选项交给用户选：缩短最长标签 / 横向压窄文字（`text_scale_x`）/ 不等宽格。用户上次选的是横向压窄到 0.9，字号约 34px。
+- **位置**：导航条紧贴字幕正下方，同时在抖音底部标题、话题区上方。1080×1920 默认 `--height 106 --bottom 504`（顶边 y≈1310）。放在画面 80% 左右会被抖音文案盖住。换画幅或字幕位置变了，先预览再定。
+- **样式标准**（星姐 5 条）：栏少字少、字粗（橙金 Black + 深棕粗描边 + 投影）、已讲和未讲反差大、粗竖条形成格子感、位置在字幕下。详细参数和参考图见 `references/style-standard.md` 与 `assets/reference/`（本机私有，公开仓库里没有）。
+- 用户否掉的东西别再拿出来：书面化标签（如「试纸假象」「读懂身体」），以及旧版的细线、半透明金黄填充。
 
-## 命令
+## 质量门槛（不过不交付）
 
-```powershell
-python scripts/render_chapter_rail.py input.mp4 chapters.json `
-  --preview-image preview.png --preview-time 12
+- ffprobe：分辨率和原片一致，有音频，时长和原片差不超过 0.1s。
+- 抽帧（每个换格点前后各 1s、每栏中点、片尾）：当前栏在连续变长，前面的栏是满的，后面的栏是空的，换格就发生在 chapters.json 写的那一秒。片尾所有栏都满。
+- 裁切验证区域时，y 范围按 `--bottom/--height` 计算。上次手动裁偏过一次，用 `verify_rail.py` 就不会。
+- 字体回退（脚本打印 `WARNING: 字体…已回退`）、时间段无效、FFmpeg 报错：停下来说明情况，不要交一个看着成功的结果。
+- 视频已经有字幕时，导航条要避开字幕。如果之后还要加字幕：先合导航条，最后合字幕。
 
-python scripts/render_chapter_rail.py input.mp4 chapters.json `
-  --output input-chapter-rail.mp4
+## 参考文件（按需读）
 
-python scripts/render_chapter_rail.py input.mp4 chapters.json `
-  --overlay-only chapter-rail.mov
-```
-
-## 必须遵守
-
-- 原始视频只读，绝不覆盖。
-- 进度由真实时间驱动，不能在章节结束时突然跳格。
-- 首次使用新样式或新画幅时必须先做静帧或短片预览。
-- 中文字体加载失败、时间段无效、FFmpeg 失败时停止交付，不生成假成功结果。
-- 视频已有字幕时，栏目层必须避开字幕；后续另加字幕时，栏目层先合成，字幕最后合成。
+- `references/style-standard.md`：星姐风格拆解、预设参数、标签风格、字号取舍。改样式或写标签前读。
+- `references/verification.md`：预览、对比图、合成后验证的细节，以及 verify_rail.py 的原理和局限。
+- `references/timeline.md`：EDL 映射公式、章节起点怎么找、末栏怎么处理。
+- `references/chapter-schema.md`：chapters.json 格式、style 字段、预设合并规则。
+- `references/delivery-tina.md`：本机环境（素材路径、分块传输、交付文件夹），私有文件，不随仓库发布。
+- `assets/presets/xingjie.json`：默认预设。`assets/reference/`：参考图，本机私有，不随仓库发布。

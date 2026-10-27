@@ -1,3 +1,7 @@
 __pycache__/
 *.pyc
 .DS_Store
+
+# 本机私有：电脑信息与参考截图，不发布
+references/delivery-tina.md
+assets/reference/

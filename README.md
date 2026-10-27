@@ -27,4 +27,8 @@ $chapter-progress-rail
 - `SKILL.md`：Skill 工作流与约束
 - `agents/openai.yaml`：Codex UI 元数据
 - `references/chapter-schema.md`：章节时间配置格式
-- `scripts/render_chapter_rail.py`：本地渲染器
+- `scripts/render_chapter_rail.py`：旧版本地渲染器
+- `scripts/render_chapter_rail_v2.py`：v2 渲染器（星姐风格，`--preset xingjie`）
+- `scripts/edl_to_timeline.py`、`scripts/verify_rail.py`、`scripts/compare_stack.py`：时间轴、验证、对比图
+- `assets/presets/`：预设（参考图 `assets/reference/` 为本机私有，不随仓库发布）
+- 本机用法与更新记录见 `HOWTO.md`

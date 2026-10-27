@@ -59,9 +59,17 @@ def parse_color(value: str, default_alpha: int = 255) -> tuple[int, int, int, in
 
 
 def choose_font(custom: str | None, size: int) -> ImageFont.FreeTypeFont:
+    # Prefer explicit style.font, then Windows CJK, then common Linux Noto CJK paths.
     for candidate in [
-        custom, "C:/Windows/Fonts/msyhbd.ttc", "C:/Windows/Fonts/msyh.ttc",
-        "C:/Windows/Fonts/simhei.ttf", "/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc",
+        custom,
+        "C:/Windows/Fonts/msyhbd.ttc",
+        "C:/Windows/Fonts/msyh.ttc",
+        "C:/Windows/Fonts/simhei.ttf",
+        "/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc",
+        "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
+        "/usr/share/fonts/truetype/noto/NotoSansCJK-Bold.ttc",
+        "/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc",
+        "/usr/share/fonts/opentype/noto/NotoSerifCJK-Bold.ttc",
     ]:
         if candidate and Path(candidate).exists():
             return ImageFont.truetype(candidate, size=size)

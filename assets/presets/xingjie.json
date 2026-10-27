@@ -1,0 +1,31 @@
+{
+  "name": "xingjie",
+  "description": "星姐抖音风格（Tina 2026-10-27 认可的默认预设）：橙金 Black 粗体+深棕粗描边+投影，已讲实奶油黄/未讲透明浅灰，粗橙竖条分格带左右端条，等宽格，统一字号+横向压窄 0.9。",
+  "layout": {
+    "reference_height": 1920,
+    "height": 106,
+    "bottom": 504,
+    "note": "1080x1920 下栏顶边 y≈1310，紧贴字幕正下方、在抖音底部标题/话题区上方；其他画幅按视频高度等比缩放"
+  },
+  "style": {
+    "font": "/home/box/fonts/NotoSansSC-Black.otf",
+    "fill_color": "#F3E9A6D9",
+    "track_color": "#ECECE873",
+    "text_color": "#F5A317",
+    "outline_color": "#3A2208",
+    "shadow_color": "#000000B3",
+    "shadow_offset": [3, 4],
+    "shadow_blur": 2.0,
+    "stroke_ratio": 0.1,
+    "divider_color": "#E59A1A",
+    "divider_outline_color": "#3A2208",
+    "divider_width": 9,
+    "divider_outline_width": 2,
+    "divider_inset": 0.1,
+    "end_caps": true,
+    "cell_padding": 5,
+    "text_height_ratio": 0.66,
+    "text_scale_x": 0.9,
+    "supersample": 3
+  }
+}
